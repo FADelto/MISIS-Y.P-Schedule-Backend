@@ -9,7 +9,6 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
-import com.google.api.client.util.Value;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
@@ -20,7 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Main {
@@ -69,10 +67,10 @@ public class Main {
                 .setApplicationName(APPLICATION_NAME)
                 .build();
 
-        ValueRange response = service.spreadsheets().values()
-                .get(spreadsheetId, range)
-                .setMajorDimension("COLUMNS")
-                .execute();
+//        ValueRange response = service.spreadsheets().values()
+//                .get(spreadsheetId, range)
+//                .setMajorDimension("COLUMNS")
+//                .execute();
 
         Spreadsheet response1 = service.spreadsheets()
                 .get(spreadsheetId)
@@ -102,15 +100,30 @@ public class Main {
                 }
             }
         }
+        String[][] checkRange = new String[][]{range.split(":DW")};
+        int startRange;
+        int endRange;
+        endRange = Integer.parseInt(checkRange[0][1]);
+        startRange =  Integer.parseInt(checkRange[0][0].split("!G")[1]);
+//        System.out.println("end: " + endRange + " start: " + startRange);
         List<Integer> list = new ArrayList<>();
         List<Integer> list1 = new ArrayList<>();
-        Lesson TP = new Lesson(subjectName, list, list1);
-        for (CellIndex cellIndex : matchingColorCells) {
-            TP.addDayOfYear(244 + cellIndex.getColumnIndex());
-            TP.addTimeStart(5 + cellIndex.getRowIndex());  // 5, 6, или 7 в зависимости от индекса строки
+        Lesson lesson = new Lesson(subjectName, list, list1);
+        for (CellIndex cellIndex : matchingColorCells){
+            lesson.addDayOfYear(244 + cellIndex.getColumnIndex());
+            if (endRange - startRange == 4) {
+                if (cellIndex.getRowIndex() > 1) {
+                    lesson.addTimeStart(3 + cellIndex.getRowIndex()); // 5, 6, или 7 в зависимости от индекса строки
+                }
+                else {
+                    lesson.addTimeStart(2 + cellIndex.getRowIndex());
+                }
+            }
+            else {
+                lesson.addTimeStart(5 + cellIndex.getRowIndex());
+            }
         }
-
-        return TP;
+        return lesson;
     }
 
     private static boolean colorsMatch(Color color1, Color color2) {
@@ -125,7 +138,7 @@ public class Main {
         int startRow = 6;
         int endRow = service.spreadsheets()
                 .get(spreadsheetId)
-                .execute().getSheets().get(0).getProperties().getGridProperties().getRowCount().intValue();
+                .execute().getSheets().get(0).getProperties().getGridProperties().getRowCount();
 
         List<String> subjects = new ArrayList<>();
         Set<String> knownSubjects = new HashSet<>();
@@ -165,8 +178,14 @@ public class Main {
         List<String> subjects = getSubjectsFromColumnC(spreadsheetId);
         List<Lesson> lessons = new ArrayList<>();
         for (String subject : subjects) {
+            int rowsPerSubject;
+            if (subject.contains(" теории ")) {
+                rowsPerSubject = 5;
+            } else {
+                rowsPerSubject = 3;
+            }
             int startRow = (subjects.indexOf(subject) * 3) + 6;
-            int endRow = startRow + 2;
+            int endRow = startRow + rowsPerSubject - 1;
             String range = "!G" + startRow + ":DW" + endRow;
             Lesson lesson = getScheduleForWebinar(spreadsheetId, subject, range);
             if (!lesson.getTimeStart().isEmpty()){
