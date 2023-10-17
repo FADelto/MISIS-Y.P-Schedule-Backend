@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Lesson {
-    private final String name; // название
-    private final List<Integer> timeStart; // время начала занятия
-    private final List<Integer> DayOfYear;
-    private final List<LessonType> lessonType;
+    private final String name; // Название предмета
+    private final List<Integer> timeStart; // Время начала занятия
+    private final List<Integer> DayOfYear; // Номер дня в году
+    private final List<LessonType> lessonType; // Тип урока [Онлайн занятие, Лекция, Занятия для 1 группы, Занятия для 2 группы]
 
     public Lesson(String name, List<Integer> timeStart, List<Integer> dayOfYear) {
         this.name = name;
@@ -29,6 +29,7 @@ public class Lesson {
 //    public void setLessonType(LessonType lessonType) {
 //        this.lessonType = lessonType;
 //    }
+
     public void addLessonType(LessonType Type) {
         lessonType.add(Type);
     }

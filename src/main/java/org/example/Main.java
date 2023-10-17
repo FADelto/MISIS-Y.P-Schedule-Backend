@@ -26,21 +26,10 @@ public class Main {
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private static final String TOKENS_DIRECTORY_PATH = "tokens";
 
-    /**
-     * Global instance of the scopes required by this quickstart.
-     * If modifying these scopes, delete your previously saved tokens/ folder.
-     */
     private static final List<String> SCOPES =
             Collections.singletonList(SheetsScopes.SPREADSHEETS_READONLY);
     private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
 
-    /**
-     * Creates an authorized Credential object.
-     *
-     * @param HTTP_TRANSPORT The network HTTP Transport.
-     * @return An authorized Credential object.
-     * @throws IOException If the credentials.json file cannot be found.
-     */
     private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT)
             throws IOException {
         // Load client secrets.
@@ -78,32 +67,55 @@ public class Main {
         List<Integer> list1 = new ArrayList<>();
         Lesson lesson = new Lesson(subjectName, list, list1);
 
-        List<Color> targetColors = new ArrayList<>(); //Создание массива для проверки на тип урока
+        //Проверка на количество строк для определения номера пары
+        String[][] checkRange = new String[][]{range.split(":DW")};
+        int startRange = Integer.parseInt(checkRange[0][1]);
+        int endRange=  Integer.parseInt(checkRange[0][0].split("!G")[1]);
+
+        //Создание массива для проверки на тип урока
+        List<Color> targetColors = new ArrayList<>();
         targetColors.addAll(LessonType.ONLINE.getColor());
         targetColors.addAll(LessonType.LECTURE.getColor());
         targetColors.addAll(LessonType.GROUP1.getColor());
         targetColors.addAll(LessonType.GROUP2.getColor());
 
-        List<CellIndex> matchingColorCells = new ArrayList<>();
-
-        if (response1 != null && !response1.getSheets().isEmpty()) {
+//        List<CellIndex> matchingColorCells = new ArrayList<>();
+        //Парсинг таблицы
+        if (response1 != null && !response1.getSheets().isEmpty()) { //Проверка ответа от сервера
             Sheet sheet = response1.getSheets().get(0);
-            if (sheet.getData() != null && !sheet.getData().isEmpty()) {
+            if (sheet.getData() != null && !sheet.getData().isEmpty()) { //Проверка заполнености таблицы
                 List<RowData> rowDataList = sheet.getData().get(0).getRowData();
-                for (int rowIndex = 0; rowIndex < rowDataList.size(); rowIndex++) {
+                for (int rowIndex = 0; rowIndex < rowDataList.size(); rowIndex++) { //Парсинг строк
                     RowData rowData = rowDataList.get(rowIndex);
-                    for (int columnIndex = 0; columnIndex < rowData.getValues().size(); columnIndex++) {
+                    for (int columnIndex = 0; columnIndex < rowData.getValues().size(); columnIndex++) { //Парсинг столбцов
                         CellData cell = rowData.getValues().get(columnIndex);
-                        if (cell.getUserEnteredFormat() != null && cell.getUserEnteredFormat().getBackgroundColor() != null) {
+                        if (cell.getUserEnteredFormat() != null && cell.getUserEnteredFormat().getBackgroundColor() != null) { //Проверка на наличия цвета
                             Color cellColor = cell.getUserEnteredFormat().getBackgroundColor();
-                            int color = 0; // Переменная для определения типа урока
+                            int colorcounter = 0; // Переменная для определения типа урока
                             for(Color targetcolor : targetColors) {
-                                if (cellColor.getRed().equals(targetcolor.getRed()) && cellColor.getGreen().equals(targetcolor.getGreen()) && cellColor.getBlue().equals(targetcolor.getBlue())) {
-                                    //System.out.println(color + "  " + LessonType.values()[color].getColor() + "  " + LessonType.values()[color] );
-                                    lesson.addLessonType(LessonType.values()[color]);
-                                    matchingColorCells.add(new CellIndex(columnIndex, rowIndex));
+                                if ( cellColor.getRed().equals(targetcolor.getRed()) &&
+                                     cellColor.getGreen().equals(targetcolor.getGreen()) &&
+                                     cellColor.getBlue().equals(targetcolor.getBlue()) ) {
+
+                                    if(cell.getFormattedValue()!= null){ //Проверка на ошибки (В таблице есть пустые ячейки с нужным фоном)
+                                        //System.out.println(color + "  " + LessonType.values()[color].getColor() + "  " + LessonType.values()[color] );
+                                        lesson.addLessonType(LessonType.values()[colorcounter]);
+                                        lesson.addDayOfYear(244 + columnIndex);
+                                        if (endRange - startRange == 4) {
+                                            if (rowIndex > 1) {
+                                                lesson.addTimeStart(3 + rowIndex);
+                                            }
+                                            else {
+                                                lesson.addTimeStart(2 + rowIndex);
+                                            }
+                                        }
+                                        else {
+                                            lesson.addTimeStart(5 + rowIndex); // 5, 6, или 7 в зависимости от индекса строки
+                                        }
+//                                        matchingColorCells.add(new CellIndex(columnIndex, rowIndex));
+                                    }
                                 }
-                                color++;
+                                colorcounter++;
                             }
                         }
                     }
@@ -111,26 +123,27 @@ public class Main {
             }
         }
 
-        String[][] checkRange = new String[][]{range.split(":DW")};
-        int startRange;
-        int endRange;
-        endRange = Integer.parseInt(checkRange[0][1]);
-        startRange =  Integer.parseInt(checkRange[0][0].split("!G")[1]);
-//        System.out.println("end: " + endRange + " start: " + startRange);
-        for (CellIndex cellIndex : matchingColorCells){
-            lesson.addDayOfYear(244 + cellIndex.getColumnIndex());
-            if (endRange - startRange == 4) {
-                if (cellIndex.getRowIndex() > 1) {
-                    lesson.addTimeStart(3 + cellIndex.getRowIndex());
-                }
-                else {
-                    lesson.addTimeStart(2 + cellIndex.getRowIndex());
-                }
-            }
-            else {
-                lesson.addTimeStart(5 + cellIndex.getRowIndex()); // 5, 6, или 7 в зависимости от индекса строки
-            }
-        }
+//        String[][] checkRange = new String[][]{range.split(":DW")};
+//        int startRange;
+//        int endRange;
+//        endRange = Integer.parseInt(checkRange[0][1]);
+//        startRange =  Integer.parseInt(checkRange[0][0].split("!G")[1]);
+////        System.out.println("end: " + endRange + " start: " + startRange);
+//        // Заполение времени начала и дня
+//        for (CellIndex cellIndex : matchingColorCells){
+//            lesson.addDayOfYear(244 + cellIndex.getColumnIndex());
+//            if (endRange - startRange == 4) {
+//                if (cellIndex.getRowIndex() > 1) {
+//                    lesson.addTimeStart(3 + cellIndex.getRowIndex());
+//                }
+//                else {
+//                    lesson.addTimeStart(2 + cellIndex.getRowIndex());
+//                }
+//            }
+//            else {
+//                lesson.addTimeStart(5 + cellIndex.getRowIndex()); // 5, 6, или 7 в зависимости от индекса строки
+//            }
+//        }
         return lesson;
     }
 
@@ -156,7 +169,6 @@ public class Main {
                     .execute();
 
             List<List<Object>> values = response.getValues();
-
             if (values != null && !values.isEmpty()) {
                 if (!values.get(0).isEmpty()) {
                     String potentialSubject = values.get(0).get(0).toString();
@@ -167,16 +179,13 @@ public class Main {
                 }
             }
         }
-
        // Вывод всех найденных предметов для отладки
 //        System.out.println("Found subjects: " + subjects);
 
         return subjects;
     }
-
-    public static void main(String... args) throws IOException, GeneralSecurityException {
-//        String spreadsheetId = "1pD0dce2o_BsB68hm33pSxZd4fNOFFRrxbgOvbmB7UIc";
-        String spreadsheetId = "1NlUU1ulotC5Kjiz-ctVhzwyAcyEWbK2ZY5eA4Z2PKoQ";
+    //Основной метод для получения расписания
+    public static List<Lesson> getSchedule(String spreadsheetId) throws GeneralSecurityException, IOException {
         List<String> subjects = getSubjectsFromColumnC(spreadsheetId);
         List<Lesson> lessons = new ArrayList<>();
         for (String subject : subjects) {
@@ -194,6 +203,12 @@ public class Main {
                 lessons.add(lesson);
             }
         }
+        return lessons;
+    }
+    public static void main(String... args) throws GeneralSecurityException, IOException {
+//        String spreadsheetId = "1pD0dce2o_BsB68hm33pSxZd4fNOFFRrxbgOvbmB7UIc";
+        String spreadsheetId = "1NlUU1ulotC5Kjiz-ctVhzwyAcyEWbK2ZY5eA4Z2PKoQ";
+        List<Lesson> lessons = getSchedule(spreadsheetId);
 
         for (Lesson lesson : lessons) {
             System.out.println("Subject: " + lesson.getName());
