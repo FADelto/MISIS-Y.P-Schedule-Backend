@@ -1,20 +1,36 @@
 package org.example;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Lesson {
     private final String name; // название
-    private List<Integer> timeStart; // время начала занятия
-    private List<Integer> DayOfYear;
+    private final List<Integer> timeStart; // время начала занятия
+    private final List<Integer> DayOfYear;
+    private final List<LessonType> lessonType;
 
     public Lesson(String name, List<Integer> timeStart, List<Integer> dayOfYear) {
         this.name = name;
         this.timeStart = timeStart;
         DayOfYear = dayOfYear;
+        this.lessonType = new ArrayList<>();
     }
 
-    public Lesson(String name) {
-        this.name = name;
+//    public Lesson(String name, List<Integer> timeStart, List<Integer> dayOfYear) {
+//        this.name = name;
+//        this.timeStart = timeStart;
+//        DayOfYear = dayOfYear;
+//    }
+
+    public List<LessonType> getLessonType() {
+        return lessonType;
+    }
+
+//    public void setLessonType(LessonType lessonType) {
+//        this.lessonType = lessonType;
+//    }
+    public void addLessonType(LessonType Type) {
+        lessonType.add(Type);
     }
 
     public void addDayOfYear(int day) {
