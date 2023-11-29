@@ -1,0 +1,25 @@
+version: '2'
+
+services:
+  app:
+    image: 'docker-spring-boot:latest'
+    ports:
+      - "8080:8080"
+      - "8888:8888"
+    build:
+      context: .
+    container_name: app
+    depends_on:
+      - db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/ScheduleAPI
+      - SPRING_DATASOURCE_USERNAME=delto
+      - SPRING_DATASOURCE_PASSWORD=scheduleDelto!
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+
+  db:
+    image: 'postgres:13.1-alpine'
+    container_name: db
+    environment:
+      - POSTGRES_USER=delto
+      - POSTGRES_PASSWORD=scheduleDelto!

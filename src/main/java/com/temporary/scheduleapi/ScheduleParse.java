@@ -17,7 +17,6 @@ import com.temporary.scheduleapi.Repos.LessonRepo;
 import com.temporary.scheduleapi.models.Lesson;
 import com.temporary.scheduleapi.models.LessonType;
 import com.temporary.scheduleapi.models.SubjectI;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.FileNotFoundException;
@@ -36,15 +35,15 @@ public class ScheduleParse {
         this.lessonRepo = lessonRepo;
     }
 
-    @Value("${credentials.file.path}")
-    private static String CREDENTIALS_FILE_PATH;
+//    @Value("${credentials.file.path}")
+//    private static String CREDENTIALS_FILE_PATH;
     private static final String APPLICATION_NAME = "ScheduleParser";
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private static final String TOKENS_DIRECTORY_PATH = "tokens";
 
     private static final List<String> SCOPES =
             Collections.singletonList(SheetsScopes.SPREADSHEETS_READONLY);
-//    private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
+    private static final String CREDENTIALS_FILE_PATH = "authFiles/credentials.json";
 
 
     private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT)
